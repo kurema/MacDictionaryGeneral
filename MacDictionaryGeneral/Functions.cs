@@ -41,13 +41,21 @@ namespace MacDictionaryGeneral
 
             return BitConverter.ToUInt16(bytes, 0);
         }
-
         public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien)
         {
+            long[] dummy;
+            return LoadBytesArray(sr, SizeLength, BigEndien);
+        }
+
+        public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien,out long[] Address)
+        {
             List<byte[]> result = new List<byte[]>();
+            var addrResult = new List<long>();
             while (sr.Position < sr.Length) {
+                addrResult.Add(sr.Position);
                 result.Add(LoadBytes(sr, SizeLength, BigEndien));
             }
+            Address = addrResult.ToArray();
             return result.ToArray();
         }
 

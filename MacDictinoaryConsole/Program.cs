@@ -23,7 +23,8 @@ namespace MacDictinoaryConsole
             using (var fs = new FileStream("../Body.data", FileMode.Open))
             {
                 fs.Seek(0x60, SeekOrigin.Begin);
-                var result = MacDictionaryGeneral.GeneralObjectReader.LoadSingleEntry(fs, t, false);
+                long[] Addr;
+                var result = MacDictionaryGeneral.GeneralObjectReader.LoadSingleEntry(fs, t, out Addr, false);
             }
         }
     }

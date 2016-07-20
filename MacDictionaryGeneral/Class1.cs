@@ -21,7 +21,7 @@ namespace MacDictionaryGeneral
         }
 
 
-        public static KeyValuePair<string, byte[]>[][][] LoadSingleEntry(Stream sr,Dictionary<string, object> info,bool Auxiliary=false)
+        public static byte[] GetBody(Stream sr, Dictionary<string, object> info, bool Auxiliary = false)
         {
             bool BigEndien = (bool)info["IDXIndexBigEndian"];
             var entryBinary = Functions.LoadBytes(sr, 4, BigEndien);
@@ -31,7 +31,7 @@ namespace MacDictionaryGeneral
             {
                 if (info.ContainsKey("HeapDataCompressionType"))
                 {
-                    compressionType= (int)info["HeapDataCompressionType"]; 
+                    compressionType = (int)info["HeapDataCompressionType"];
                 }
             }
             else if (Auxiliary && info.ContainsKey("TrieAuxiliaryDataOptions"))
@@ -48,23 +48,37 @@ namespace MacDictionaryGeneral
             {
                 body = entryBinary;
             }
-            else if(compressionType == 2){
+            else if (compressionType == 2)
+            {
                 body = Functions.Decompress(Functions.LoadBytes(new MemoryStream(entryBinary), 4, BigEndien), BigEndien);
             }
             else if (compressionType == 3)
             {
                 body = Functions.Decompress(entryBinary, BigEndien);
-            }else
+            }
+            else
             {
                 throw new Exception();
             }
+            return body;
+        }
 
-            var tempms = new MemoryStream(body);
+        public static KeyValuePair<string, byte[]>[][][] LoadSingleEntry(Stream sr, Dictionary<string, object> info, bool Auxiliary = false)
+        {
+            long[] dummy;
+            return LoadSingleEntry(sr, info, out dummy, Auxiliary);
+        }
+
+        public static KeyValuePair<string, byte[]>[][][] LoadSingleEntry(Stream sr,Dictionary<string, object> info,out long[] Address, bool Auxiliary=false)
+        {
+            bool BigEndien = (bool)info["IDXIndexBigEndian"];
+
+            var tempms = new MemoryStream(GetBody(sr, info, Auxiliary));
             tempms.Seek(0, SeekOrigin.Begin);
 
             if (Auxiliary)
             {
-                var arrays = Functions.LoadBytesArray(tempms, 4, BigEndien);
+                var arrays = Functions.LoadBytesArray(tempms, 4, BigEndien,out Address);
 
                 List<KeyValuePair<string, byte[]>[][]> result = new List<KeyValuePair<string, byte[]>[][]>();
 
@@ -96,11 +110,14 @@ namespace MacDictionaryGeneral
             else
             {
                 List<KeyValuePair<string, byte[]>[]> result2 = new List<KeyValuePair<string, byte[]>[]>();
+                var addrResult = new List<long>();
 
                 while (tempms.Position < tempms.Length)
                 {
+                    addrResult.Add(tempms.Position);
                     result2.Add(LoadDataFieldArray(tempms, (Dictionary<string, object>)info["IDXIndexDataFields"], BigEndien));
                 }
+                Address = addrResult.ToArray();
                 return new KeyValuePair<string, byte[]>[1][][] { result2.ToArray() };
             }
         }
