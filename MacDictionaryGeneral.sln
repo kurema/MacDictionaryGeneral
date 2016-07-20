@@ -5,7 +5,7 @@ VisualStudioVersion = 14.0.25420.1
 MinimumVisualStudioVersion = 10.0.40219.1
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacDictionaryGeneral", "MacDictionaryGeneral\MacDictionaryGeneral.csproj", "{F9617EAA-2DDB-44E5-BFA1-964D874148E4}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlistCSOrdered", "PlistCS\PlistCSOrdered.csproj", "{FCC19BFB-A002-45E1-A662-DEA46021AA97}"
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "PlistCS", "PlistCS\PlistCS.csproj", "{FCC19BFB-A002-45E1-A662-DEA46021AA97}"
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "MacDictinoaryConsole", "MacDictinoaryConsole\MacDictinoaryConsole.csproj", "{E6450E81-D50D-4994-8254-5CBE945BE04F}"
 EndProject

@@ -10,31 +10,24 @@ namespace MacDictionaryGeneral
 {
     public class GeneralObjectReader
     {
-        public static KeyValuePair<string, byte[]>[][][][] LoadFullEntry(Stream sr, Dictionary<string, object> info, bool Auxiliary = false)
+        public static KeyValuePair<string, byte[]>[][][][] LoadFullEntry(Stream sr, Dictionary<string, object> info)
         {
             var result = new List<KeyValuePair<string, byte[]>[][][]>();
             while (sr.Position < sr.Length)
             {
-                result.Add(LoadSingleEntry(sr, info, Auxiliary));
+                result.Add(LoadSingleEntry(sr, info));
             }
             return result.ToArray();
         }
 
 
-        public static byte[] GetBody(Stream sr, Dictionary<string, object> info, bool Auxiliary = false)
+        public static byte[] GetBody(Stream sr, Dictionary<string, object> info)
         {
             bool BigEndien = (bool)info["IDXIndexBigEndian"];
             var entryBinary = Functions.LoadBytes(sr, 4, BigEndien);
 
             int compressionType = -1;
-            if (!Auxiliary)
-            {
-                if (info.ContainsKey("HeapDataCompressionType"))
-                {
-                    compressionType = (int)info["HeapDataCompressionType"];
-                }
-            }
-            else if (Auxiliary && info.ContainsKey("TrieAuxiliaryDataOptions"))
+            if (info.ContainsKey("TrieAuxiliaryDataOptions"))
             {
                 var dataOption = (Dictionary<string, object>)info["TrieAuxiliaryDataOptions"];
                 if (dataOption.ContainsKey("HeapDataCompressionType"))
@@ -42,6 +35,14 @@ namespace MacDictionaryGeneral
                     compressionType = (int)dataOption["HeapDataCompressionType"];
                 }
             }
+            else
+            {
+                if (info.ContainsKey("HeapDataCompressionType"))
+                {
+                    compressionType = (int)info["HeapDataCompressionType"];
+                }
+            }
+
 
             byte[] body;
             if (compressionType <= 0)
@@ -63,18 +64,20 @@ namespace MacDictionaryGeneral
             return body;
         }
 
-        public static KeyValuePair<string, byte[]>[][][] LoadSingleEntry(Stream sr, Dictionary<string, object> info, bool Auxiliary = false)
+        public static KeyValuePair<string, byte[]>[][][] LoadSingleEntry(Stream sr, Dictionary<string, object> info)
         {
             long[] dummy;
-            return LoadSingleEntry(sr, info, out dummy, Auxiliary);
+            return LoadSingleEntry(sr, info, out dummy);
         }
 
-        public static KeyValuePair<string, byte[]>[][][] LoadSingleEntry(Stream sr,Dictionary<string, object> info,out long[] Address, bool Auxiliary=false)
+        public static KeyValuePair<string, byte[]>[][][] LoadSingleEntry(Stream sr,Dictionary<string, object> info,out long[] Address)
         {
             bool BigEndien = (bool)info["IDXIndexBigEndian"];
 
-            var tempms = new MemoryStream(GetBody(sr, info, Auxiliary));
+            var tempms = new MemoryStream(GetBody(sr, info));
             tempms.Seek(0, SeekOrigin.Begin);
+
+            bool Auxiliary = info.ContainsKey("TrieAuxiliaryDataOptions");
 
             if (Auxiliary)
             {

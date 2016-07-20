@@ -54,9 +54,9 @@
       <Project>{f9617eaa-2ddb-44e5-bfa1-964d874148e4}</Project>
       <Name>MacDictionaryGeneral</Name>
     </ProjectReference>
-    <ProjectReference Include="..\PlistCS\PlistCSOrdered.csproj">
+    <ProjectReference Include="..\PlistCS\PlistCS.csproj">
       <Project>{fcc19bfb-a002-45e1-a662-dea46021aa97}</Project>
-      <Name>PlistCSOrdered</Name>
+      <Name>PlistCS</Name>
     </ProjectReference>
   </ItemGroup>
   <Import Project="$(MSBuildToolsPath)\Microsoft.CSharp.targets" />

@@ -24,7 +24,7 @@ namespace MacDictinoaryConsole
             {
                 fs.Seek(0x60, SeekOrigin.Begin);
                 long[] Addr;
-                var result = MacDictionaryGeneral.GeneralObjectReader.LoadSingleEntry(fs, t, out Addr, false);
+                var result = MacDictionaryGeneral.GeneralObjectReader.LoadSingleEntry(fs, t, out Addr);
             }
         }
     }
