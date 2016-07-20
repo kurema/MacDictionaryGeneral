@@ -250,37 +250,6 @@ namespace PlistCS
             return parseBinary(0);
         }
 
-        private static DictionaryOrdered<string, object> parseDictionaryOrdered(XmlNode node)
-        {
-            XmlNodeList children = node.ChildNodes;
-            if (children.Count % 2 != 0)
-            {
-                throw new DataMisalignedException("Dictionary elements must have an even number of child nodes");
-            }
-
-            DictionaryOrdered<string, object> dict = new DictionaryOrdered<string, object>();
-
-            for (int i = 0; i < children.Count; i += 2)
-            {
-                XmlNode keynode = children[i];
-                XmlNode valnode = children[i + 1];
-
-                if (keynode.Name != "key")
-                {
-                    throw new ApplicationException("expected a key node");
-                }
-
-                object result = parse(valnode);
-
-                if (result != null)
-                {
-                    dict.Add(keynode.InnerText, result);
-                }
-            }
-
-            return dict;
-        }
-
         private static Dictionary<string, object> parseDictionary(XmlNode node)
         {
             XmlNodeList children = node.ChildNodes;
@@ -343,7 +312,7 @@ namespace PlistCS
             switch (node.Name)
             {
                 case "dict":
-                    return parseDictionaryOrdered(node);
+                    return parseDictionary(node);
                 case "array":
                     return parseArray(node);
                 case "string":
@@ -747,36 +716,6 @@ namespace PlistCS
             }
         }
 
-        private static object parseBinaryDictionaryOrdered(int objRef)
-        {
-            DictionaryOrdered<string, object> buffer = new DictionaryOrdered<string, object>();
-            List<int> refs = new List<int>();
-            int refCount = 0;
-
-            int refStartPosition;
-            refCount = getCount(offsetTable[objRef], out refStartPosition);
-
-
-            if (refCount < 15)
-                refStartPosition = offsetTable[objRef] + 1;
-            else
-                refStartPosition = offsetTable[objRef] + 2 + RegulateNullBytes(BitConverter.GetBytes(refCount), 1).Length;
-
-            for (int i = refStartPosition; i < refStartPosition + refCount * 2 * objRefSize; i += objRefSize)
-            {
-                byte[] refBuffer = objectTable.GetRange(i, objRefSize).ToArray();
-                Array.Reverse(refBuffer);
-                refs.Add(BitConverter.ToInt32(RegulateNullBytes(refBuffer, 4), 0));
-            }
-
-            for (int i = 0; i < refCount; i++)
-            {
-                buffer.Add((string)parseBinary(refs[i]), parseBinary(refs[i + refCount]));
-            }
-
-            return buffer;
-        }
-
         private static object parseBinaryDictionary(int objRef)
         {
             Dictionary<string, object> buffer = new Dictionary<string, object>();
@@ -892,7 +831,7 @@ namespace PlistCS
                     }
                 case 0xD0:
                     {
-                        return parseBinaryDictionaryOrdered(objRef);
+                        return parseBinaryDictionary(objRef);
                     }
                 case 0xA0:
                     {
