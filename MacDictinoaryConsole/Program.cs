@@ -10,8 +10,8 @@ namespace MacDictinoaryConsole
     {
         static void Main(string[] args)
         {
-            var dic1=(PlistCS.DictionaryOrdered<string, object>)PlistCS.Plist.readPlist("../Info.plist");
-            var t = dic1["IDXDictionaryIndexes"];
+            var dic1=(Dictionary<string, object>)PlistCS.Plist.readPlist("../Info.plist");
+            var t = (Dictionary<string, object>)((List<object>) dic1["IDXDictionaryIndexes"])[0];
             }
     }
 }

@@ -6,11 +6,12 @@ using System.Threading.Tasks;
 
 namespace MacDictionaryGeneral
 {
-    public class PlistReader
+    public class GeneralObjectReader
     {
-        public void Read(string path)
+        public void SetPlist(Dictionary<string, object> info)
         {
-            var dic=PlistCS.Plist.readPlist(path);
+
         }
     }
+
 }
