@@ -10,94 +10,144 @@ namespace MacDictionaryGeneral
 {
     public class GeneralObjectReader
     {
-        public static Dictionary<string,string> LoadSingleEntry(Stream sr,Dictionary<string, object> info)
+        public static KeyValuePair<string, byte[]>[][][][] LoadFullEntry(Stream sr, Dictionary<string, object> info, bool Auxiliary = false)
+        {
+            var result = new List<KeyValuePair<string, byte[]>[][][]>();
+            while (sr.Position < sr.Length)
+            {
+                result.Add(LoadSingleEntry(sr, info, Auxiliary));
+            }
+            return result.ToArray();
+        }
+
+
+        public static KeyValuePair<string, byte[]>[][][] LoadSingleEntry(Stream sr,Dictionary<string, object> info,bool Auxiliary=false)
         {
             bool BigEndien = (bool)info["IDXIndexBigEndian"];
             var entryBinary = Functions.LoadBytes(sr, 4, BigEndien);
 
-            var sr2 = new MemoryStream(entryBinary);
-            if (info.ContainsKey("TrieAuxiliaryDataOptions"))
+            int compressionType = -1;
+            if (!Auxiliary)
+            {
+                if (info.ContainsKey("HeapDataCompressionType"))
+                {
+                    compressionType= (int)info["HeapDataCompressionType"]; 
+                }
+            }
+            else if (Auxiliary && info.ContainsKey("TrieAuxiliaryDataOptions"))
             {
                 var dataOption = (Dictionary<string, object>)info["TrieAuxiliaryDataOptions"];
-            }    
-        }
-
-        public interface IEntry
-        {
-            byte[] Content { get; }
-            long Address { get; }
-
-            string ToString(System.Text.Encoding enc);
-        }
-
-        public class Entry:IEntry
-        {
-            public byte[] Content { get; private set; }
-            public long Address { get; private set; }
-
-            public Entry(Stream sr, bool BigEndien)
-            {
-                Address = sr.Position;
-
-                byte[] bytes = new byte[4];
-
-                sr.Read(bytes, 0, 4);
-                int rawLen = Functions.UnpackInt(bytes, BigEndien);
-
-                var data = new byte[rawLen];
-                sr.Read(data, 0, rawLen);
-                this.Content = data;
+                if (dataOption.ContainsKey("HeapDataCompressionType"))
+                {
+                    compressionType = (int)dataOption["HeapDataCompressionType"];
+                }
             }
 
-            public static Entry[] GetEntries(Stream sr, bool BigEndien)
+            byte[] body;
+            if (compressionType <= 0)
             {
-                List<Entry> result = new List<Entry>();
-                while (true)
+                body = entryBinary;
+            }
+            else if(compressionType == 2){
+                body = Functions.Decompress(Functions.LoadBytes(new MemoryStream(entryBinary), 4, BigEndien), BigEndien);
+            }
+            else if (compressionType == 3)
+            {
+                body = Functions.Decompress(entryBinary, BigEndien);
+            }else
+            {
+                throw new Exception();
+            }
+
+            var tempms = new MemoryStream(body);
+            tempms.Seek(0, SeekOrigin.Begin);
+
+            if (Auxiliary)
+            {
+                var arrays = Functions.LoadBytesArray(tempms, 4, BigEndien);
+
+                List<KeyValuePair<string, byte[]>[][]> result = new List<KeyValuePair<string, byte[]>[][]>();
+
+                foreach (var item in arrays)
                 {
-                    result.Add(new Entry(sr, BigEndien));
-                    if (sr.Position >= sr.Length) break;
+                    List<KeyValuePair<string, byte[]>[]> result2 = new List<KeyValuePair<string, byte[]>[]>();
+
+                    byte[][] localArrays;
+                    if (info.ContainsKey("IDXIndexDataSizeLength"))
+                    {
+                        var ms2 = new MemoryStream(item);
+                        ms2.Seek(4, SeekOrigin.Begin);
+                        localArrays = Functions.LoadBytesArray(ms2, (int)info["IDXIndexDataSizeLength"], BigEndien);
+                    }
+                    else
+                    {
+                        localArrays = new byte[1][] { item };
+                    }
+
+                    foreach (var item2 in localArrays)
+                    {
+                        var ms = new MemoryStream(item2);
+                        result2.Add(LoadDataFieldArray(ms, (Dictionary<string, object>)info["IDXIndexDataFields"], BigEndien));
+                    }
+                    result.Add(result2.ToArray());
                 }
                 return result.ToArray();
             }
-
-            public string ToString(Encoding enc)
+            else
             {
-                return enc.GetString(Content);
+                List<KeyValuePair<string, byte[]>[]> result2 = new List<KeyValuePair<string, byte[]>[]>();
+
+                while (tempms.Position < tempms.Length)
+                {
+                    result2.Add(LoadDataFieldArray(tempms, (Dictionary<string, object>)info["IDXIndexDataFields"], BigEndien));
+                }
+                return new KeyValuePair<string, byte[]>[1][][] { result2.ToArray() };
             }
         }
 
-        public class EntryCompressed:IEntry
+        public static KeyValuePair<string, byte[]>[] LoadDataFieldArray(Stream ms, Dictionary<string, object> dataFieldInfo,bool BigEndien)
         {
-            public byte[] Content { get { return _Content == null ? _Content = Functions.Decompress(Compressed, RawLength) : _Content; } }
+            List<KeyValuePair<string, byte[]>> temp = new List<KeyValuePair<string, byte[]>>();
 
-            public long Address { get; private set; }
-
-            private byte[] _Content = null;
-            private byte[] Compressed;
-            private int RawLength;
-
-            public EntryCompressed(Stream sr,bool BigEndien)
+            if (dataFieldInfo.ContainsKey("IDXExternalDataFields"))
             {
-                Address = sr.Position;
-
+                temp.AddRange(LoadDataFieldSingleArray(ms, (List<object>)dataFieldInfo["IDXExternalDataFields"], BigEndien));
             }
-
-            public static EntryCompressed[] GetEntries(Stream sr, bool BigEndien)
+            if (dataFieldInfo.ContainsKey("IDXFixedDataFields"))
             {
-                List<EntryCompressed> result = new List<EntryCompressed>();
-                while (true)
-                {
-                    result.Add(new EntryCompressed(sr, BigEndien));
-                    if (sr.Position >= sr.Length) break;
-                }
-                return result.ToArray();
+                temp.AddRange(LoadDataFieldSingleArray(ms, (List<object>)dataFieldInfo["IDXFixedDataFields"], BigEndien));
             }
-
-            public string ToString(Encoding enc)
+            if (dataFieldInfo.ContainsKey("IDXVariableDataFields"))
             {
-                return enc.GetString(Content);
+                temp.AddRange(LoadDataFieldSingleArray(ms, (List<object>)dataFieldInfo["IDXVariableDataFields"], BigEndien));
             }
+            return temp.ToArray();
+        }
+
+        public static KeyValuePair<string, byte[]>[] LoadDataFieldSingleArray(Stream sr, List<object> info, bool BigEndien)
+        {
+            List<KeyValuePair<string, byte[]>> result = new List<KeyValuePair<string, byte[]>>();
+            foreach (Dictionary<string, object> item in info)
+            {
+                result.Add(LoadDataFieldSingle(sr, item, BigEndien));
+            }
+            return result.ToArray();
+        }
+
+        public static KeyValuePair<string,byte[]> LoadDataFieldSingle(Stream sr, Dictionary<string, object> info,bool BigEndien)
+        {
+            if (info.ContainsKey("IDXDataSize"))
+            {
+                int length = (int)info["IDXDataSize"];
+                byte[] result = new byte[length];
+                sr.Read(result, 0, length);
+                return new KeyValuePair<string, byte[]>((string)info["IDXDataFieldName"], result);
+            }else if (info.ContainsKey("IDXDataSizeLength"))
+            {
+                var data= Functions.LoadBytes(sr, (int)info["IDXDataSizeLength"], BigEndien);
+                return new KeyValuePair<string, byte[]>((string)info["IDXDataFieldName"], data);
+            }
+            throw new Exception();
         }
     }
-
 }

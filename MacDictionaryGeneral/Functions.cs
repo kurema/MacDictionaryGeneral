@@ -42,13 +42,23 @@ namespace MacDictionaryGeneral
             return BitConverter.ToUInt16(bytes, 0);
         }
 
+        public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien)
+        {
+            List<byte[]> result = new List<byte[]>();
+            while (sr.Position < sr.Length) {
+                result.Add(LoadBytes(sr, SizeLength, BigEndien));
+            }
+            return result.ToArray();
+        }
+
+
         public static byte[] LoadBytes(Stream sr,int SizeLength,bool BigEndien)
         {
             Int64 Size = 0;
             Int64 Base = 1;
             for(int i = 0; i < SizeLength; i++)
             {
-                var temp = sr.ReadByte();
+                int temp = sr.ReadByte();
                 if (BigEndien)
                 {
                     Size = Size * 0x100 + temp;
@@ -85,10 +95,10 @@ namespace MacDictionaryGeneral
             stream.Read(bytes, 0, 4);
             int rawLen = Functions.UnpackInt(bytes, BigEndien);
 
-            stream.Seek(2, SeekOrigin.Begin);
+            stream.Seek(2, SeekOrigin.Current);
+
             using (var ds = new System.IO.Compression.DeflateStream(stream, System.IO.Compression.CompressionMode.Decompress))
             {
-                ds.Seek(0, SeekOrigin.Begin);
                 var result = new byte[rawLen];
                 ds.Read(result, 0, rawLen);
                 return result;

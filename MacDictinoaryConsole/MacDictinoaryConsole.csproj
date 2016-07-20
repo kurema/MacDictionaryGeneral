@@ -50,9 +50,10 @@
     <None Include="App.config" />
   </ItemGroup>
   <ItemGroup>
-    <WCFMetadata Include="Service References\" />
-  </ItemGroup>
-  <ItemGroup>
+    <ProjectReference Include="..\MacDictionaryGeneral\MacDictionaryGeneral.csproj">
+      <Project>{f9617eaa-2ddb-44e5-bfa1-964d874148e4}</Project>
+      <Name>MacDictionaryGeneral</Name>
+    </ProjectReference>
     <ProjectReference Include="..\PlistCS\PlistCSOrdered.csproj">
       <Project>{fcc19bfb-a002-45e1-a662-dea46021aa97}</Project>
       <Name>PlistCSOrdered</Name>
