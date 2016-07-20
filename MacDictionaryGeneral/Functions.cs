@@ -44,7 +44,7 @@ namespace MacDictionaryGeneral
         public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien)
         {
             long[] dummy;
-            return LoadBytesArray(sr, SizeLength, BigEndien);
+            return LoadBytesArray(sr, SizeLength, BigEndien,out dummy);
         }
 
         public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien,out long[] Address)

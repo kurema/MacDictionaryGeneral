@@ -74,10 +74,10 @@ namespace MacDictionaryGeneral
         {
             bool BigEndien = (bool)info["IDXIndexBigEndian"];
 
-            var tempms = new MemoryStream(GetBody(sr, info));
+                var tempms = new MemoryStream(GetBody(sr, info));
             tempms.Seek(0, SeekOrigin.Begin);
 
-            bool Auxiliary = info.ContainsKey("TrieAuxiliaryDataOptions");
+            bool Auxiliary = (string)info["IDXIndexAccessMethod"] == "com.apple.TrieAccessMethod";
 
             if (Auxiliary)
             {
