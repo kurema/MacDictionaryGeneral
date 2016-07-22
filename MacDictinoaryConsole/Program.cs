@@ -6,6 +6,8 @@ using System.Threading.Tasks;
 
 using System.IO;
 
+using MacDictionaryGeneral;
+
 namespace MacDictinoaryConsole
 {
     class Program
@@ -31,6 +33,12 @@ namespace MacDictinoaryConsole
             //    var dic = new MacDictionaryGeneral.MacDictionary(@"");
             //    var text = dic.GetBodyDataSingle(0x60, 0);
             //}
+            using (var fs = new FileStream("../EntryID.index", FileMode.Open))
+            {
+                fs.Seek(0x2040, SeekOrigin.Begin);
+                long[] addr;
+                var array = Functions.EncodeArray(Functions.LoadBytesArray(fs, 2, false, out addr, false), System.Text.Encoding.Unicode);
+            }
         }
     }
 }

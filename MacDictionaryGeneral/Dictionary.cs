@@ -72,7 +72,6 @@ namespace MacDictionaryGeneral
                         return Encoding.UTF8.GetString(result[0][i][0].Value);
                     }
                 }
-                
             }
             return "";
         }

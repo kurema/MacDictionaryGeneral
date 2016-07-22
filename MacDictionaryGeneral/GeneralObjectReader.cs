@@ -10,6 +10,11 @@ namespace MacDictionaryGeneral
 {
     public class GeneralObjectReader
     {
+        public static void ReadTrieIndex(Stream sr)
+        {
+            Functions.LoadBytesArray(sr, 2, false);
+        }
+
         public static KeyValuePair<string, byte[]>[][][][] LoadFullEntry(Stream sr, Dictionary<string, object> info)
         {
             var result = new List<KeyValuePair<string, byte[]>[][][]>();

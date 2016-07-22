@@ -41,26 +41,36 @@ namespace MacDictionaryGeneral
 
             return BitConverter.ToUInt16(bytes, 0);
         }
-        public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien)
+        public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien,bool IncludeSelfCount=false)
         {
             long[] dummy;
-            return LoadBytesArray(sr, SizeLength, BigEndien,out dummy);
+            return LoadBytesArray(sr, SizeLength, BigEndien,out dummy,IncludeSelfCount);
         }
 
-        public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien,out long[] Address)
+        public static byte[][] LoadBytesArray(Stream sr, int SizeLength, bool BigEndien,out long[] Address, bool IncludeSelfCount = false)
         {
             List<byte[]> result = new List<byte[]>();
             var addrResult = new List<long>();
             while (sr.Position < sr.Length) {
                 addrResult.Add(sr.Position);
-                result.Add(LoadBytes(sr, SizeLength, BigEndien));
+                result.Add(LoadBytes(sr, SizeLength, BigEndien, IncludeSelfCount));
             }
             Address = addrResult.ToArray();
             return result.ToArray();
         }
 
+        public static string[] EncodeArray(byte[][] data,System.Text.Encoding enc)
+        {
+            var result = new string[data.GetLength(0)];
+            for(int i = 0; i < data.Length; i++)
+            {
+                result[i] = enc.GetString(data[i]);
+            }
+            return result;
+        }
 
-        public static byte[] LoadBytes(Stream sr,int SizeLength,bool BigEndien)
+
+        public static byte[] LoadBytes(Stream sr,int SizeLength,bool BigEndien, bool IncludeSelfCount = false)
         {
             Int64 Size = 0;
             Int64 Base = 1;
@@ -78,6 +88,7 @@ namespace MacDictionaryGeneral
                 }
             }
             if (Size > int.MaxValue) { throw new Exception(); }
+            if (IncludeSelfCount) { Size -= SizeLength; }
             var result = new byte[Size];
             sr.Read(result, 0, (int)Size);
             return result;
