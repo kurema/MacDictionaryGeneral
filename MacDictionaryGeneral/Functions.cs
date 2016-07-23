@@ -123,5 +123,14 @@ namespace MacDictionaryGeneral
                 return result;
             }
         }
+
+        public static KeyValuePair<string, byte[]> GetEntry(KeyValuePair<string, byte[]>[] list,string key)
+        {
+            foreach(var item in list)
+            {
+                if (item.Key == key) { return item; }
+            }
+            throw new KeyNotFoundException();
+        }
     }
 }

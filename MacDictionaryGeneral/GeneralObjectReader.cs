@@ -8,21 +8,73 @@ using System.IO;
 
 namespace MacDictionaryGeneral
 {
-    public class GeneralObjectReader
+    public static class GeneralObjectReader
     {
         public static void ReadTrieIndex(Stream sr)
         {
             Functions.LoadBytesArray(sr, 2, false);
         }
 
+        public static string SearchFile(string fileName,string CurrentDirectory)
+        {
+            if (File.Exists(Path.Combine(CurrentDirectory, fileName)))
+            {
+                return Path.Combine(CurrentDirectory, fileName);
+            }
+            else if (File.Exists(Path.Combine(CurrentDirectory, "Resources", fileName)))
+            {
+                return Path.Combine(CurrentDirectory, "Resources", fileName);
+            }
+            // ToDo: Search i18n path.
+            return null;
+        }
+
+        public static void SeekToAlignmentIfZero(Stream sr)
+        {
+            var b = sr.ReadByte();
+            if (b != 0)
+            {
+                sr.Seek(-1, SeekOrigin.Current);
+                return;
+            }
+            SeekToAlignment(sr);
+        }
+
+        public static void SeekToAlignment(Stream sr)
+        {
+            sr.Seek(8 - (sr.Position + 7) % 8 - 1, SeekOrigin.Current);
+        }
+
         public static KeyValuePair<string, byte[]>[][][][] LoadFullEntry(Stream sr, Dictionary<string, object> info)
         {
+            //ToDo: Check size and stop.
             var result = new List<KeyValuePair<string, byte[]>[][][]>();
             while (sr.Position < sr.Length)
             {
                 result.Add(LoadSingleEntry(sr, info));
+                SeekToAlignmentIfZero(sr);
             }
             return result.ToArray();
+        }
+
+        public static string GetIndexPath(Dictionary<string, object> info,string CurrentDirectory)
+        {
+            return SearchFile((string)info["IDXIndexPath"], CurrentDirectory);
+        }
+
+        public static string GetAuxiliaryPath(Dictionary<string, object> info, string CurrentDirectory)
+        {
+            if (info.ContainsKey("TrieAuxiliaryDataOptions"))
+            {
+                var dataOption = (Dictionary<string, object>)info["TrieAuxiliaryDataOptions"];
+                return SearchFile((string)dataOption["IDXIndexPath"],CurrentDirectory);
+            }
+            return null;
+        }
+
+        public static bool IsAuxiliary(Dictionary<string, object> info)
+        {
+            return (string)info["IDXIndexAccessMethod"] == "com.apple.TrieAccessMethod";
         }
 
 

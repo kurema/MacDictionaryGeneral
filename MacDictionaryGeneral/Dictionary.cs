@@ -42,24 +42,94 @@ namespace MacDictionaryGeneral
             }
         }
 
-        public string SearchFile(string fileName)
+
+        public KeyValuePair<string, byte[]>[][] GetKeyword(bool[] target, string keyword, Func<string, string, bool> f)
         {
-            if (File.Exists(Path.Combine(CurrentDirectory, fileName)))
-            {
-                return Path.Combine(CurrentDirectory, fileName);
-            }
-            else if (File.Exists(Path.Combine(CurrentDirectory, "Resources", fileName)))
-            {
-                return Path.Combine(CurrentDirectory, "Resources", fileName);
-            }
-            return null;
+            return GetKeyword(target, keyword, (a, b, c) => f(Encoding.Unicode.GetString(a), c));
         }
 
+        public KeyValuePair<string,byte[]>[][] GetKeyword(bool[] target,string keyword,Func<byte[],byte[],string,bool> f)
+        {
+            var result = new List<KeyValuePair<string, byte[]>[]>();
+            var be = (bool)KeywordIndex["IDXIndexBigEndian"];
+            byte[] keywordBytes = Encoding.Unicode.GetBytes(keyword);
+            using (var fs = new FileStream(GeneralObjectReader.GetAuxiliaryPath(KeywordIndex,CurrentDirectory), FileMode.Open))
+            {
+                fs.Seek(0x48, SeekOrigin.Begin);
+                var idx= GeneralObjectReader.LoadFullEntry(fs, KeywordIndex);
+                foreach(var item1 in idx)
+                {
+                    foreach (var item2 in item1)
+                    {
+                        foreach (var item3 in item2)
+                        {
+                            for(int i = 2; i < item3.Count(); i++)
+                            {
+                                if (target.Count() > i - 2 && target[i - 2] && f(item3[i].Value, keywordBytes, keyword))
+                                {
+                                    result.Add(item3);
+                                    break;
+                                }
+                            }
+                        }
+                    }
+                }
+                return result.ToArray();
+            }
+        }
+
+        public string[] GetBodyDataArray(KeyValuePair<string, byte[]>[][] keywords)
+        {
+            var result = new List<string>();
+            foreach(var keyword in keywords)
+            {
+                var text=(GetBodyDataSingle(keyword));
+                if (text != "" && !result.Contains(text)) result.Add(text);
+            }
+            return result.ToArray();
+        }
+
+
+        public string GetFullHtml(string[] source)
+        {
+            string style = GeneralObjectReader.SearchFile((string)Plist["DCSDictionaryCSS"], CurrentDirectory);
+            style = "file:///" + style.Replace('\\','/');
+
+            StringBuilder htmlB = new StringBuilder();
+            htmlB.Append("<!DOCTYPE html>\n<html><head><meta http-equiv='content-style-type' content='text/css' /><link rel='stylesheet' type='text/css' href='"+style+"' /></head><body>");
+            foreach(var s in source)
+            {
+                htmlB.Append(s);
+            }
+            htmlB.Append("</body></html>");
+            return htmlB.ToString();
+        }
+
+
+        public string GetBodyDataSingle(KeyValuePair<string, byte[]>[] keyword)
+        {
+            return GetBodyDataSingle(Functions.GetEntry(keyword, "DCSExternalBodyID").Value);
+        }
+
+        public string GetBodyDataSingle(byte[] keyword)
+        {
+            var be = (bool)BodyDataIndex["IDXIndexBigEndian"];
+            if (keyword.Length == 8)
+            {
+                var temp = new byte[4];
+                Array.Copy(keyword, 4, temp, 0, 4);
+                var archiveAddress = Functions.UnpackInt(temp, be)+0x40;
+                Array.Copy(keyword, temp, 4);
+                var contentAddress = Functions.UnpackInt(temp, be);
+                return GetBodyDataSingle(archiveAddress, contentAddress);
+            }
+            throw new NotImplementedException();
+        }
 
         public string GetBodyDataSingle(Int32 archiveAddress,Int32 contentAddress)
         {
             var be = (bool)BodyDataIndex["IDXIndexBigEndian"];
-            using(var fs=new FileStream(SearchFile((string)BodyDataIndex["IDXIndexPath"]), FileMode.Open))
+            using(var fs=new FileStream(GeneralObjectReader.GetIndexPath(BodyDataIndex,CurrentDirectory), FileMode.Open))
             {
                 long[] address;
                 fs.Seek(archiveAddress, SeekOrigin.Begin);
@@ -71,6 +141,7 @@ namespace MacDictionaryGeneral
                     {
                         return Encoding.UTF8.GetString(result[0][i][0].Value);
                     }
+                    i++;
                 }
             }
             return "";

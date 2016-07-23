@@ -1,0 +1,24 @@
+﻿<Window x:Class="MacDictionaryWpfTest.MainWindow"
+        xmlns="http://schemas.microsoft.com/winfx/2006/xaml/presentation"
+        xmlns:x="http://schemas.microsoft.com/winfx/2006/xaml"
+        xmlns:d="http://schemas.microsoft.com/expression/blend/2008"
+        xmlns:mc="http://schemas.openxmlformats.org/markup-compatibility/2006"
+        xmlns:local="clr-namespace:MacDictionaryWpfTest"
+        mc:Ignorable="d"
+        xmlns:libcef="clr-namespace:CefSharp.Wpf;assembly=CefSharp.Wpf" 
+        Title="MainWindow" Height="350" Width="525">
+    <Grid>
+        <Grid.RowDefinitions>
+            <RowDefinition Height="Auto"/>
+            <RowDefinition Height="*"/>
+        </Grid.RowDefinitions>
+        <StackPanel Grid.Row="0">
+            <TextBox Name="TextBoxPath"/>
+            <TextBox Name="TextBoxKeyword"/>
+            <Button  Content="Search" Click="Button_Click"/>
+
+        </StackPanel>
+        <libcef:ChromiumWebBrowser x:Name="Browser" Grid.Row="1" />
+        <!--<WebBrowser Name="WebBrowserBody" Grid.Row="1"/>-->
+    </Grid>
+</Window>
